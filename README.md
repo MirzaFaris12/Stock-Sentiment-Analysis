@@ -41,7 +41,7 @@ streamlit run main.py
 
 ---
 
-## 📝 Example Output
+## Example Output
 
 - Summary of news sentiment
 - Interactive pie chart of article sentiment
@@ -49,7 +49,7 @@ streamlit run main.py
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 - `streamlit`
 - `plotly`
@@ -59,7 +59,7 @@ streamlit run main.py
 
 ---
 
-## 💡 Future Enhancements (Planned for Week 3)
+## Future Enhancements (Planned for Week 3)
 
 - Add GPT-based summary generation
 - Export sentiment results to CSV
@@ -68,7 +68,7 @@ streamlit run main.py
 
 ---
 
-## 🙌 Credits
+## Credits
 
 Created by Mirza Faris  
 Guided by OpenAI’s ChatGPT in prompt engineering research
