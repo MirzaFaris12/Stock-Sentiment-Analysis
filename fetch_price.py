@@ -25,7 +25,7 @@ def fetch_price(ticker):
 '''
 
 # Save it to a file
-path = "/mnt/data/fetch_price_twelvedata.py"
+path = "/mnt/data/fetch_price.py"
 with open(path, "w") as f:
     f.write(twelve_data_price_fetcher.strip())
 
