@@ -47,10 +47,12 @@ if st.button("Generate Report"):
     fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
     st.plotly_chart(fig, use_container_width=True)
 
-    try:
-        df_price = fetch_price(ticker.upper())
-        fig_price = px.line(df_price, y="Close", title=f"{ticker.upper()} Daily Close Price")
+    # Stock Price Chart using yfinance
+    df_price = fetch_price(ticker.upper())
+    if df_price is not None:
+        fig_price = px.line(df_price, x="Date", y="Close", title=f"{ticker.upper()} - Past Month Closing Prices")
         st.plotly_chart(fig_price, use_container_width=True)
-    except:
-        st.warning("⚠️ Unable to fetch price data. Check API key or ticker.")
+    else:
+        st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.")
+
 
