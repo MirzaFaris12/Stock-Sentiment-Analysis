@@ -4,3 +4,5 @@ vaderSentiment
 python-dotenv
 plotly
 pandas
+yfinance
+
