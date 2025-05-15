@@ -1,6 +1,8 @@
 import streamlit as st
+import plotly.graph_objects as go
 from fetch_news import fetch_news
 from analyze_sentiment import score_articles
+
 
 st.set_page_config(page_title="Stock Market News & Sentiment Report")
 st.title("📈 Stock Market News & Sentiment Analysis")
@@ -27,3 +29,16 @@ if st.button("Generate Report"):
     neg = sum(1 for x in sentiments if x['sentiment'] < -0.05)
     neu = total - pos - neg
     st.write(f"Out of {total} articles: 🟢 {pos} Positive, 🟡 {neu} Neutral, 🔴 {neg} Negative")
+    
+# Count sentiment types
+labels = ["Positive", "Neutral", "Negative"]
+values = [
+    sum(1 for x in sentiments if x['sentiment'] > 0.05),
+    sum(1 for x in sentiments if -0.05 <= x['sentiment'] <= 0.05),
+    sum(1 for x in sentiments if x['sentiment'] < -0.05),
+]
+
+# Plot pie chart
+fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
+st.plotly_chart(fig, use_container_width=True)
+
