@@ -12,9 +12,12 @@ st.title("📈 Stock Market News & Sentiment Analysis")
 st.markdown("Select a stock ticker to generate a sentiment report based on recent news headlines.")
 
 ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
+keyword = st.text_input("Optional: Filter headlines containing this keyword (e.g., 'AI')", "")
 
 if st.button("Generate Report"):
     articles = fetch_news(ticker)
+     if keyword:
+        articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()
     sentiments = score_articles(articles)
 
     st.subheader(f"Report for {ticker.upper()}")
