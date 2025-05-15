@@ -49,6 +49,7 @@ if st.button("Generate Report"):
 
     # Stock Price Chart using yfinance
     df_price = fetch_price(ticker.upper())
+    st.write("📊 Raw price data:", df_price)
     if df_price is not None:
         fig_price = px.line(df_price, x="Date", y="Close", title=f"{ticker.upper()} - Past Month Closing Prices")
         st.plotly_chart(fig_price, use_container_width=True)
