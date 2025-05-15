@@ -1,6 +1,3 @@
-# Create a new fetch_price.py using Twelve Data API (free alternative to yfinance)
-
-twelve_data_price_fetcher = '''
 import requests
 import pandas as pd
 
@@ -22,14 +19,6 @@ def fetch_price(ticker):
         return df[["Date", "Close"]].sort_values("Date")
     except Exception:
         return None
-'''
-
-# Save it to a file
-path = "/mnt/data/fetch_price.py"
-with open(path, "w") as f:
-    f.write(twelve_data_price_fetcher.strip())
-
-path
 
 
 
