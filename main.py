@@ -32,22 +32,22 @@ if st.button("Generate Report"):
     neu = total - pos - neg
     st.write(f"Out of {total} articles: 🟢 {pos} Positive, 🟡 {neu} Neutral, 🔴 {neg} Negative")
     
-# Count sentiment types
-labels = ["Positive", "Neutral", "Negative"]
-values = [
-    sum(1 for x in sentiments if x['sentiment'] > 0.05),
-    sum(1 for x in sentiments if -0.05 <= x['sentiment'] <= 0.05),
-    sum(1 for x in sentiments if x['sentiment'] < -0.05),
-]
+    # Count sentiment types
+    labels = ["Positive", "Neutral", "Negative"]
+    values = [
+        sum(1 for x in sentiments if x['sentiment'] > 0.05),
+        sum(1 for x in sentiments if -0.05 <= x['sentiment'] <= 0.05),
+        sum(1 for x in sentiments if x['sentiment'] < -0.05),
+    ]
 
-# Plot pie chart
-fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
-st.plotly_chart(fig, use_container_width=True)
+    # Plot pie chart
+    fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
+    st.plotly_chart(fig, use_container_width=True)
 
-try:
-    df_price = fetch_price(ticker.upper())
-    fig_price = px.line(df_price, y="Close", title=f"{ticker.upper()} Daily Close Price")
-    st.plotly_chart(fig_price, use_container_width=True)
-except:
-    st.warning("⚠️ Unable to fetch price data. Check API key or ticker.")
+    try:
+        df_price = fetch_price(ticker.upper())
+        fig_price = px.line(df_price, y="Close", title=f"{ticker.upper()} Daily Close Price")
+        st.plotly_chart(fig_price, use_container_width=True)
+    except:
+        st.warning("⚠️ Unable to fetch price data. Check API key or ticker.")
 
