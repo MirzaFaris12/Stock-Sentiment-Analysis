@@ -1,7 +1,9 @@
 import streamlit as st
 import plotly.graph_objects as go
+import plotly.express as px
 from fetch_news import fetch_news
 from analyze_sentiment import score_articles
+from fetch_price import fetch_price
 
 
 st.set_page_config(page_title="Stock Market News & Sentiment Report")
@@ -41,4 +43,11 @@ values = [
 # Plot pie chart
 fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
 st.plotly_chart(fig, use_container_width=True)
+
+try:
+    df_price = fetch_price(ticker.upper())
+    fig_price = px.line(df_price, y="Close", title=f"{ticker.upper()} Daily Close Price")
+    st.plotly_chart(fig_price, use_container_width=True)
+except:
+    st.warning("⚠️ Unable to fetch price data. Check API key or ticker.")
 
