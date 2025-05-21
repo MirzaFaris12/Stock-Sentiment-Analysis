@@ -2,10 +2,11 @@ import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 import datetime
-from fetch_news import fetch_news
-from analyze_finbert import score_with_finbert
-from fetch_price import fetch_price
 from dateutil.parser import parse as parse_date
+
+from fetch_news import fetch_news
+from analyze_sentiment import score_articles
+from fetch_price import fetch_price
 
 st.set_page_config(page_title="Stock Market News & Sentiment Report")
 st.title("📈 Stock Market News & Sentiment Analysis")
@@ -15,44 +16,56 @@ st.markdown("Select a stock ticker to generate a sentiment report based on recen
 ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
 keyword = st.text_input("Optional: Filter headlines containing this keyword (e.g., 'AI')", "")
 
-today = datetime.date.today()
-start_date = st.date_input("Start Date", today - datetime.timedelta(days=7))
-end_date = st.date_input("End Date", today)
+# Date range inputs
+st.markdown("Optional: Filter news by publication date range")
+col1, col2 = st.columns(2)
+with col1:
+    start_date = st.date_input("Start Date", datetime.date.today() - datetime.timedelta(days=7))
+with col2:
+    end_date = st.date_input("End Date", datetime.date.today())
 
 if st.button("Generate Report"):
     articles = fetch_news(ticker)
     if keyword:
         articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()]
 
+    # Date filtering
     articles = [
-    a for a in articles
-    if 'publishedAt' in a and start_date <= parse_date(a['publishedAt']).date() <= end_date
+        a for a in articles
+        if 'publishedAt' in a and start_date <= parse_date(a['publishedAt']).date() <= end_date
     ]
 
-    titles = [a.get("title", "") for a in articles]
-    sentiments = score_with_finbert(titles)
+    sentiments = score_articles(articles)
 
     st.subheader(f"Report for {ticker.upper()}")
     st.markdown("### News Highlights")
     for item in sentiments:
-        label = item['sentiment']
-        emoji = "🟢" if label == "Positive" else "🔴" if label == "Negative" else "🟡"
-        st.markdown(f"- {item['title']} ({emoji} {label}, Confidence: {item['confidence']:.2f})")
+        sentiment_label = ("🔴 Negative" if item['sentiment'] < -0.05 else
+                           "🟢 Positive" if item['sentiment'] > 0.05 else
+                           "🟡 Neutral")
+        confidence_text = f", Confidence: {item['confidence']:.2f}" if 'confidence' in item else ""
+        st.markdown(f"- {item['title']} ({sentiment_label}{confidence_text})")
 
     st.markdown("### Summary")
     total = len(sentiments)
-    pos = sum(1 for x in sentiments if x['sentiment'] == "Positive")
-    neg = sum(1 for x in sentiments if x['sentiment'] == "Negative")
-    neu = sum(1 for x in sentiments if x['sentiment'] == "Neutral")
+    pos = sum(1 for x in sentiments if x['sentiment'] > 0.05)
+    neg = sum(1 for x in sentiments if x['sentiment'] < -0.05)
+    neu = total - pos - neg
     st.write(f"Out of {total} articles: 🟢 {pos} Positive, 🟡 {neu} Neutral, 🔴 {neg} Negative")
 
-    # Sentiment distribution pie chart
+    # Count sentiment types
     labels = ["Positive", "Neutral", "Negative"]
-    values = [pos, neu, neg]
+    values = [
+        sum(1 for x in sentiments if x['sentiment'] > 0.05),
+        sum(1 for x in sentiments if -0.05 <= x['sentiment'] <= 0.05),
+        sum(1 for x in sentiments if x['sentiment'] < -0.05),
+    ]
+
+    # Plot pie chart
     fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
     st.plotly_chart(fig, use_container_width=True)
 
-    # Stock Price Chart
+    # Stock Price Chart using yfinance or alternative
     df_price = fetch_price(ticker.upper())
     st.write("📊 Raw price data:", df_price)
     if df_price is not None:
@@ -60,6 +73,7 @@ if st.button("Generate Report"):
         st.plotly_chart(fig_price, use_container_width=True)
     else:
         st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.")
+
 
 
 
