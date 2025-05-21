@@ -4,13 +4,14 @@ import plotly.graph_objects as go
 import plotly.express as px
 import datetime
 from dateutil.parser import parse as parse_date
+from datetime import timedelta
 
 from fetch_news import fetch_news
 from analyze_sentiment import score_articles
 from fetch_price import fetch_price
 
 st.set_page_config(page_title="Stock Market News & Sentiment Report", layout="wide")
-st.title("Stock Market News & Sentiment Analysis")
+st.title("📈 Stock Market News & Sentiment Analysis")
 
 with st.expander("🔍 Analysis Settings"):
     ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
@@ -75,6 +76,29 @@ if st.button("Generate Report"):
 
                 with st.expander("View Raw Price Data"):
                     st.dataframe(df_price)
+
+                # 📉 Price change after each article
+                enriched = []
+                df_price["Date"] = pd.to_datetime(df_price["Date"])
+                for article in sentiments:
+                    pub_date = pd.to_datetime(article["publishedAt"]).date()
+                    next_day = pub_date + timedelta(days=1)
+                    price_today = df_price[df_price["Date"].dt.date == pub_date]["Close"].values
+                    price_next = df_price[df_price["Date"].dt.date == next_day]["Close"].values
+                    if len(price_today) == 1 and len(price_next) == 1:
+                        change = (price_next[0] - price_today[0]) / price_today[0] * 100
+                        enriched.append({
+                            "Title": article["title"],
+                            "Sentiment": article["sentiment"],
+                            "Published Date": pub_date,
+                            "Price at Publish": price_today[0],
+                            "Price Next Day": price_next[0],
+                            "Change (%)": round(change, 2)
+                        })
+                if enriched:
+                    st.markdown("---")
+                    st.subheader("💹 Price Change After News")
+                    st.dataframe(pd.DataFrame(enriched))
             else:
                 st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.")
 
