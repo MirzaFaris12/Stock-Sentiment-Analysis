@@ -7,4 +7,6 @@ pandas
 yfinance
 transformers
 torch
+python-dateutil
+
 
