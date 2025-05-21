@@ -81,7 +81,13 @@ if st.button("Generate Report"):
                 enriched = []
                 df_price["Date"] = pd.to_datetime(df_price["Date"])
                 for article in sentiments:
-                    pub_date = pd.to_datetime(article["publishedAt"]).date()
+                    if "publishedAt" not in article:
+                        continue  # Skip if missing date
+                    try:
+                        pub_date = pd.to_datetime(article["publishedAt"]).date()
+                    except Exception:
+                        continue  # Skip if parsing fails
+
                     next_day = pub_date + timedelta(days=1)
                     price_today = df_price[df_price["Date"].dt.date == pub_date]["Close"].values
                     price_next = df_price[df_price["Date"].dt.date == next_day]["Close"].values
