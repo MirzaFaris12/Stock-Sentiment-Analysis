@@ -93,10 +93,11 @@ if st.button("Generate Report"):
 
                     price_today_row = df_price_sorted[df_price_sorted["Date"].dt.date <= pub_date].tail(1)
                     price_next_row = df_price_sorted[df_price_sorted["Date"].dt.date > pub_date].head(1)
-
-                    st.write("📝 Article date:", pub_date)
-                    st.write("📅 Price Today Row:", price_today_row)
-                    st.write("📅 Price Next Row:", price_next_row)
+                    
+                    with st.expander(f"🔍 Debug for: {article['title'][:60]}..."):
+                        st.write("📝 Article date:", pub_date)
+                        st.write("📅 Price Today Row:", price_today_row)
+                        st.write("📅 Price Next Row:", price_next_row)
 
                     if not price_today_row.empty and not price_next_row.empty:
                         price_today = price_today_row["Close"].values[0]
