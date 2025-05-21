@@ -9,71 +9,74 @@ from fetch_news import fetch_news
 from analyze_sentiment import score_articles
 from fetch_price import fetch_price
 
-st.set_page_config(page_title="Stock Market News & Sentiment Report")
+st.set_page_config(page_title="Stock Market News & Sentiment Report", layout="wide")
 st.title("📈 Stock Market News & Sentiment Analysis")
 
-st.markdown("Select a stock ticker to generate a sentiment report based on recent news headlines.")
-
-ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
-keyword = st.text_input("Optional: Filter headlines containing this keyword (e.g., 'AI')", "")
-
-# Date range inputs
-st.markdown("Optional: Filter news by publication date range")
-col1, col2 = st.columns(2)
-with col1:
-    start_date = st.date_input("Start Date", datetime.date.today() - datetime.timedelta(days=7))
-with col2:
-    end_date = st.date_input("End Date", datetime.date.today())
+with st.expander("🔍 Analysis Settings"):
+    ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
+    keyword = st.text_input("Optional: Filter headlines containing this keyword (e.g., 'AI')", "")
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input("Start Date", datetime.date.today() - datetime.timedelta(days=7))
+    with col2:
+        end_date = st.date_input("End Date", datetime.date.today())
 
 if st.button("Generate Report"):
     articles = fetch_news(ticker)
-    if keyword:
-        articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()]
-
-    # Date filtering
-    articles = [
-        a for a in articles
-        if 'publishedAt' in a and start_date <= parse_date(a['publishedAt']).date() <= end_date
-    ]
-
-    sentiments = score_articles(articles)
-
-    st.subheader(f"Report for {ticker.upper()}")
-    st.markdown("### News Highlights")
-    for item in sentiments:
-        sentiment_label = ("🔴 Negative" if item['sentiment'] < -0.05 else
-                           "🟢 Positive" if item['sentiment'] > 0.05 else
-                           "🟡 Neutral")
-        confidence_text = f", Confidence: {item['confidence']:.2f}" if 'confidence' in item else ""
-        st.markdown(f"- {item['title']} ({sentiment_label}{confidence_text})")
-
-    st.markdown("### Summary")
-    total = len(sentiments)
-    pos = sum(1 for x in sentiments if x['sentiment'] > 0.05)
-    neg = sum(1 for x in sentiments if x['sentiment'] < -0.05)
-    neu = total - pos - neg
-    st.write(f"Out of {total} articles: 🟢 {pos} Positive, 🟡 {neu} Neutral, 🔴 {neg} Negative")
-
-    # Count sentiment types
-    labels = ["Positive", "Neutral", "Negative"]
-    values = [
-        sum(1 for x in sentiments if x['sentiment'] > 0.05),
-        sum(1 for x in sentiments if -0.05 <= x['sentiment'] <= 0.05),
-        sum(1 for x in sentiments if x['sentiment'] < -0.05),
-    ]
-
-    # Plot pie chart
-    fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Stock Price Chart using yfinance or alternative
-    df_price = fetch_price(ticker.upper())
-    st.write("📊 Raw price data:", df_price)
-    if df_price is not None:
-        fig_price = px.line(df_price, x="Date", y="Close", title=f"{ticker.upper()} - Past Month Closing Prices")
-        st.plotly_chart(fig_price, use_container_width=True)
+    if not articles:
+        st.warning("⚠️ No articles found for this ticker.")
     else:
-        st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.") 
+        if keyword:
+            articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()]
+
+        articles = [
+            a for a in articles
+            if 'publishedAt' in a and start_date <= parse_date(a['publishedAt']).date() <= end_date
+        ]
+
+        sentiments = score_articles(articles)
+        if not sentiments:
+            st.warning("⚠️ Sentiment analysis failed or returned no results.")
+        else:
+            st.subheader(f"🗞️ Sentiment Report for {ticker.upper()}")
+            st.markdown("---")
+
+            st.subheader("📰 News Highlights")
+            for item in sentiments:
+                sentiment_label = ("🔴 Negative" if item['sentiment'] < -0.05 else
+                                   "🟢 Positive" if item['sentiment'] > 0.05 else
+                                   "🟡 Neutral")
+                confidence_text = f", Confidence: {item['confidence']:.2f}" if 'confidence' in item else ""
+                st.markdown(f"- {item['title']} ({sentiment_label}{confidence_text})")
+
+            st.markdown("---")
+            st.subheader("📊 Summary Statistics")
+            total = len(sentiments)
+            pos = sum(1 for x in sentiments if x['sentiment'] > 0.05)
+            neg = sum(1 for x in sentiments if x['sentiment'] < -0.05)
+            neu = total - pos - neg
+
+            c1, c2, c3 = st.columns(3)
+            c1.metric("🟢 Positive", pos)
+            c2.metric("🟡 Neutral", neu)
+            c3.metric("🔴 Negative", neg)
+
+            labels = ["Positive", "Neutral", "Negative"]
+            values = [pos, neu, neg]
+            fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.markdown("---")
+            st.subheader("📈 Stock Price Chart")
+            df_price = fetch_price(ticker.upper())
+            if df_price is not None:
+                fig_price = px.line(df_price, x="Date", y="Close", title=f"{ticker.upper()} - Past Month Closing Prices")
+                st.plotly_chart(fig_price, use_container_width=True)
+
+                with st.expander("View Raw Price Data"):
+                    st.dataframe(df_price)
+            else:
+                st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.")
 
 
 
