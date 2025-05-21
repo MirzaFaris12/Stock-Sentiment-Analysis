@@ -10,9 +10,11 @@ from fetch_news import fetch_news
 from analyze_sentiment import score_articles
 from fetch_price import fetch_price
 
+# ----- Streamlit Page Config -----
 st.set_page_config(page_title="Stock Market News & Sentiment Report", layout="wide")
 st.title("📈 Stock Market News & Sentiment Analysis")
 
+# ----- Input UI -----
 with st.expander("🔍 Analysis Settings"):
     ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
     keyword = st.text_input("Optional: Filter headlines containing this keyword (e.g., 'AI')", "")
@@ -22,23 +24,28 @@ with st.expander("🔍 Analysis Settings"):
     with col2:
         end_date = st.date_input("End Date", datetime.date.today())
 
+# ----- Main Analysis Trigger -----
 if st.button("Generate Report"):
     articles = fetch_news(ticker)
     if not articles:
         st.warning("⚠️ No articles found for this ticker.")
     else:
+        # Filter articles by keyword
         if keyword:
             articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()]
 
+        # Filter articles by date
         articles = [
             a for a in articles
             if 'publishedAt' in a and start_date <= parse_date(a['publishedAt']).date() <= end_date
         ]
 
+        # Run sentiment analysis
         sentiments = score_articles(articles)
         if not sentiments:
             st.warning("⚠️ Sentiment analysis failed or returned no results.")
         else:
+            # ----- News Headlines and Sentiment -----
             st.subheader(f"🗞️ Sentiment Report for {ticker.upper()}")
             st.markdown("---")
 
@@ -50,6 +57,7 @@ if st.button("Generate Report"):
                 confidence_text = f", Confidence: {item['confidence']:.2f}" if 'confidence' in item else ""
                 st.markdown(f"- {item['title']} ({sentiment_label}{confidence_text})")
 
+            # ----- Sentiment Summary -----
             st.markdown("---")
             st.subheader("📊 Summary Statistics")
             total = len(sentiments)
@@ -67,6 +75,7 @@ if st.button("Generate Report"):
             fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
             st.plotly_chart(fig, use_container_width=True)
 
+            # ----- Stock Price Chart -----
             st.markdown("---")
             st.subheader("📈 Stock Price Chart")
             df_price = fetch_price(ticker.upper())
@@ -77,42 +86,42 @@ if st.button("Generate Report"):
                 with st.expander("View Raw Price Data"):
                     st.dataframe(df_price)
 
-                # 📉 Price change after each article with debug
-                enriched = []
-                df_price["Date"] = pd.to_datetime(df_price["Date"])
-                df_price_sorted = df_price.sort_values("Date")
-                for article in sentiments:
-                    if "publishedAt" not in article:
-                        st.write("⚠️ Missing publishedAt:", article)
-                        continue
-                    try:
-                        pub_date = pd.to_datetime(article["publishedAt"]).date()
-                    except Exception as e:
-                        st.write("⚠️ Date parse error:", e)
-                        continue
+                # ----- Price Change After News -----
+                def calculate_price_change(df_price, sentiments):
+                    enriched = []
+                    df_price["Date"] = pd.to_datetime(df_price["Date"])
+                    df_price_sorted = df_price.sort_values("Date")
 
-                    price_today_row = df_price_sorted[df_price_sorted["Date"].dt.date <= pub_date].tail(1)
-                    price_next_row = df_price_sorted[df_price_sorted["Date"].dt.date > pub_date].head(1)
-                    
+                    for article in sentiments:
+                        if "publishedAt" not in article:
+                            continue
+                        try:
+                            pub_date = pd.to_datetime(article["publishedAt"]).date()
+                        except Exception:
+                            continue
 
-                    if not price_today_row.empty and not price_next_row.empty:
-                        price_today = price_today_row["Close"].values[0]
-                        price_next = price_next_row["Close"].values[0]
-                        change = (price_next - price_today) / price_today * 100
-                        enriched.append({
-                            "Title": article["title"],
-                            "Sentiment": article["sentiment"],
-                            "Published Date": pub_date,
-                            "Price at Publish": price_today,
-                            "Price Next Day": price_next,
-                            "Change (%)": round(change, 2)
-                        })
+                        price_today_row = df_price_sorted[df_price_sorted["Date"].dt.date <= pub_date].tail(1)
+                        price_next_row = df_price_sorted[df_price_sorted["Date"].dt.date > pub_date].head(1)
 
-                st.write("✅ Price match entries:", len(enriched))
-                if enriched:
+                        if not price_today_row.empty and not price_next_row.empty:
+                            price_today = price_today_row["Close"].values[0]
+                            price_next = price_next_row["Close"].values[0]
+                            change = (price_next - price_today) / price_today * 100
+                            enriched.append({
+                                "Title": article["title"],
+                                "Sentiment": article["sentiment"],
+                                "Published Date": pub_date,
+                                "Price at Publish": price_today,
+                                "Price Next Day": price_next,
+                                "Change (%)": round(change, 2)
+                            })
+                    return enriched
+
+                enriched_data = calculate_price_change(df_price, sentiments)
+                if enriched_data:
                     st.markdown("---")
                     st.subheader("💹 Price Change After News")
-                    st.dataframe(pd.DataFrame(enriched))
+                    st.dataframe(pd.DataFrame(enriched_data))
             else:
                 st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.")
 
