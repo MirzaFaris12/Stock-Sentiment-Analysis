@@ -10,7 +10,7 @@ from analyze_sentiment import score_articles
 from fetch_price import fetch_price
 
 st.set_page_config(page_title="Stock Market News & Sentiment Report", layout="wide")
-st.title("📈 Stock Market News & Sentiment Analysis")
+st.title("Stock Market News & Sentiment Analysis")
 
 with st.expander("🔍 Analysis Settings"):
     ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
