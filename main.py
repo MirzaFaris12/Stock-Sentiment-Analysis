@@ -77,20 +77,26 @@ if st.button("Generate Report"):
                 with st.expander("View Raw Price Data"):
                     st.dataframe(df_price)
 
-                # 📉 Price change after each article
+                # 📉 Price change after each article with debug
                 enriched = []
                 df_price["Date"] = pd.to_datetime(df_price["Date"])
                 df_price_sorted = df_price.sort_values("Date")
                 for article in sentiments:
                     if "publishedAt" not in article:
+                        st.write("⚠️ Missing publishedAt:", article)
                         continue
                     try:
                         pub_date = pd.to_datetime(article["publishedAt"]).date()
-                    except Exception:
+                    except Exception as e:
+                        st.write("⚠️ Date parse error:", e)
                         continue
 
                     price_today_row = df_price_sorted[df_price_sorted["Date"].dt.date <= pub_date].tail(1)
                     price_next_row = df_price_sorted[df_price_sorted["Date"].dt.date > pub_date].head(1)
+
+                    st.write("📝 Article date:", pub_date)
+                    st.write("📅 Price Today Row:", price_today_row)
+                    st.write("📅 Price Next Row:", price_next_row)
 
                     if not price_today_row.empty and not price_next_row.empty:
                         price_today = price_today_row["Close"].values[0]
@@ -105,12 +111,14 @@ if st.button("Generate Report"):
                             "Change (%)": round(change, 2)
                         })
 
+                st.write("✅ Price match entries:", len(enriched))
                 if enriched:
                     st.markdown("---")
                     st.subheader("💹 Price Change After News")
                     st.dataframe(pd.DataFrame(enriched))
             else:
                 st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.")
+
 
 
 
