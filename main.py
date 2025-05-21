@@ -1,9 +1,11 @@
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
+import datetime
 from fetch_news import fetch_news
 from analyze_finbert import score_with_finbert
 from fetch_price import fetch_price
+from dateutil.parser import parse as parse_date
 
 st.set_page_config(page_title="Stock Market News & Sentiment Report")
 st.title("📈 Stock Market News & Sentiment Analysis")
@@ -13,10 +15,19 @@ st.markdown("Select a stock ticker to generate a sentiment report based on recen
 ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
 keyword = st.text_input("Optional: Filter headlines containing this keyword (e.g., 'AI')", "")
 
+today = datetime.date.today()
+start_date = st.date_input("Start Date", today - datetime.timedelta(days=7))
+end_date = st.date_input("End Date", today)
+
 if st.button("Generate Report"):
     articles = fetch_news(ticker)
     if keyword:
         articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()]
+
+    articles = [
+    a for a in articles
+    if 'publishedAt' in a and start_date <= parse_date(a['publishedAt']).date() <= end_date
+    ]
 
     titles = [a.get("title", "") for a in articles]
     sentiments = score_with_finbert(titles)
