@@ -88,8 +88,23 @@ if st.button("Generate Report"):
                     except Exception:
                         continue
                     next_day = pub_date + timedelta(days=1)
-                    price_today = df_price[df_price["Date"].dt.date == pub_date]["Close"].values
-                    price_next = df_price[df_price["Date"].dt.date == next_day]["Close"].values
+                    df_price_sorted = df_price.sort_values("Date")
+                    price_today_row = df_price_sorted[df_price_sorted["Date"].dt.date <= pub_date].tail(1)
+                    price_next_row = df_price_sorted[df_price_sorted["Date"].dt.date > pub_date].head(1)
+
+                    if not price_today_row.empty and not price_next_row.empty:
+                        price_today = price_today_row["Close"].values[0]
+                        price_next = price_next_row["Close"].values[0]
+                        change = (price_next - price_today) / price_today * 100
+                        enriched.append({
+                            "Title": article["title"],
+                            "Sentiment": article["sentiment"],
+                            "Published Date": pub_date,
+                            "Price at Publish": price_today,
+                            "Price Next Day": price_next,
+                            "Change (%)": round(change, 2)
+                        })
+
                     if len(price_today) == 1 and len(price_next) == 1:
                         change = (price_next[0] - price_today[0]) / price_today[0] * 100
                         enriched.append({
@@ -100,6 +115,7 @@ if st.button("Generate Report"):
                             "Price Next Day": price_next[0],
                             "Change (%)": round(change, 2)
                         })
+                        
                 if enriched:
                     st.markdown("---")
                     st.subheader("💹 Price Change After News")
