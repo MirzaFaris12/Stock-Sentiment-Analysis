@@ -26,6 +26,8 @@ with col2:
 
 if st.button("Generate Report"):
     articles = fetch_news(ticker)
+    st.write("📰 Raw article sample:", articles[0] if articles else "No articles")
+
     if keyword:
         articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()]
 
