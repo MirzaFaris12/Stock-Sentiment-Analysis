@@ -89,7 +89,7 @@ if st.button("Generate Report"):
         fig_price = px.line(df_price, x="Date", y="Close", title=f"{ticker.upper()} - Past Month Closing Prices")
         st.plotly_chart(fig_price, use_container_width=True)
     else:
-        st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.") // this is my full current main.py update it so i can copy n paste
+        st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.") 
 
 
 
