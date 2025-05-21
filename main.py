@@ -80,6 +80,7 @@ if st.button("Generate Report"):
                 # 📉 Price change after each article
                 enriched = []
                 df_price["Date"] = pd.to_datetime(df_price["Date"])
+                df_price_sorted = df_price.sort_values("Date")
                 for article in sentiments:
                     if "publishedAt" not in article:
                         continue
@@ -87,8 +88,7 @@ if st.button("Generate Report"):
                         pub_date = pd.to_datetime(article["publishedAt"]).date()
                     except Exception:
                         continue
-                    next_day = pub_date + timedelta(days=1)
-                    df_price_sorted = df_price.sort_values("Date")
+
                     price_today_row = df_price_sorted[df_price_sorted["Date"].dt.date <= pub_date].tail(1)
                     price_next_row = df_price_sorted[df_price_sorted["Date"].dt.date > pub_date].head(1)
 
@@ -105,23 +105,13 @@ if st.button("Generate Report"):
                             "Change (%)": round(change, 2)
                         })
 
-                    if len(price_today) == 1 and len(price_next) == 1:
-                        change = (price_next[0] - price_today[0]) / price_today[0] * 100
-                        enriched.append({
-                            "Title": article["title"],
-                            "Sentiment": article["sentiment"],
-                            "Published Date": pub_date,
-                            "Price at Publish": price_today[0],
-                            "Price Next Day": price_next[0],
-                            "Change (%)": round(change, 2)
-                        })
-                        
                 if enriched:
                     st.markdown("---")
                     st.subheader("💹 Price Change After News")
                     st.dataframe(pd.DataFrame(enriched))
             else:
                 st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.")
+
 
 
 
