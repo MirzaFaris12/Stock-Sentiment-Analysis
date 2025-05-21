@@ -2,9 +2,8 @@ import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 from fetch_news import fetch_news
-from analyze_sentiment import score_articles
+from analyze_finbert import score_with_finbert
 from fetch_price import fetch_price
-
 
 st.set_page_config(page_title="Stock Market News & Sentiment Report")
 st.title("📈 Stock Market News & Sentiment Analysis")
@@ -18,36 +17,31 @@ if st.button("Generate Report"):
     articles = fetch_news(ticker)
     if keyword:
         articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()]
-    sentiments = score_articles(articles)
+
+    titles = [a.get("title", "") for a in articles]
+    sentiments = score_with_finbert(titles)
 
     st.subheader(f"Report for {ticker.upper()}")
     st.markdown("### News Highlights")
     for item in sentiments:
-        sentiment_label = ("🔴 Negative" if item['sentiment'] < -0.05 else
-                           "🟢 Positive" if item['sentiment'] > 0.05 else
-                           "🟡 Neutral")
-        st.markdown(f"- {item['title']} ({sentiment_label})")
+        label = item['sentiment']
+        emoji = "🟢" if label == "Positive" else "🔴" if label == "Negative" else "🟡"
+        st.markdown(f"- {item['title']} ({emoji} {label}, Confidence: {item['confidence']:.2f})")
 
     st.markdown("### Summary")
     total = len(sentiments)
-    pos = sum(1 for x in sentiments if x['sentiment'] > 0.05)
-    neg = sum(1 for x in sentiments if x['sentiment'] < -0.05)
-    neu = total - pos - neg
+    pos = sum(1 for x in sentiments if x['sentiment'] == "Positive")
+    neg = sum(1 for x in sentiments if x['sentiment'] == "Negative")
+    neu = sum(1 for x in sentiments if x['sentiment'] == "Neutral")
     st.write(f"Out of {total} articles: 🟢 {pos} Positive, 🟡 {neu} Neutral, 🔴 {neg} Negative")
-    
-    # Count sentiment types
-    labels = ["Positive", "Neutral", "Negative"]
-    values = [
-        sum(1 for x in sentiments if x['sentiment'] > 0.05),
-        sum(1 for x in sentiments if -0.05 <= x['sentiment'] <= 0.05),
-        sum(1 for x in sentiments if x['sentiment'] < -0.05),
-    ]
 
-    # Plot pie chart
+    # Sentiment distribution pie chart
+    labels = ["Positive", "Neutral", "Negative"]
+    values = [pos, neu, neg]
     fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
     st.plotly_chart(fig, use_container_width=True)
 
-    # Stock Price Chart using yfinance
+    # Stock Price Chart
     df_price = fetch_price(ticker.upper())
     st.write("📊 Raw price data:", df_price)
     if df_price is not None:
@@ -55,5 +49,6 @@ if st.button("Generate Report"):
         st.plotly_chart(fig_price, use_container_width=True)
     else:
         st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.")
+
 
 
