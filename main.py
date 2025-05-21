@@ -26,22 +26,6 @@ with col2:
     end_date = st.date_input("End Date", datetime.date.today())
 
 if st.button("Generate Report"):
-    
-    # Convert timestamps to datetime
-    for item in sentiments:
-        item["publishedAt"] = pd.to_datetime(item.get("publishedAt"))
-
-    df_sentiment = pd.DataFrame(sentiments)
-    df_sentiment["date"] = df_sentiment["publishedAt"].dt.date
-
-    # Average sentiment per day
-    daily_sentiment = df_sentiment.groupby("date")["sentiment"].mean().reset_index()
-
-    # Plot sentiment over time
-    fig_timeline = px.line(daily_sentiment, x="date", y="sentiment", markers=True, title="🕒 Sentiment Trend Over Time")
-    fig_timeline.update_layout(xaxis_title="Date", yaxis_title="Average Sentiment")
-    st.plotly_chart(fig_timeline, use_container_width=True)
-
     articles = fetch_news(ticker)
     if keyword:
         articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()]
