@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-import datetime
-from dateutil.parser import parse as parse_date
-from datetime import timedelta
 
 from fetch_news_finviz import fetch_news_finviz
 from analyze_sentiment import score_articles
@@ -18,11 +15,6 @@ st.title("📈 Stock Market News & Sentiment Analysis")
 with st.expander("🔍 Analysis Settings"):
     ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
     keyword = st.text_input("Optional: Filter headlines containing this keyword (e.g., 'AI')", "")
-    col1, col2 = st.columns(2)
-    with col1:
-        start_date = st.date_input("Start Date", datetime.date.today() - datetime.timedelta(days=7))
-    with col2:
-        end_date = st.date_input("End Date", datetime.date.today())
 
 # ----- Main Analysis Trigger -----
 if st.button("Generate Report"):
@@ -33,12 +25,6 @@ if st.button("Generate Report"):
         # Filter articles by keyword
         if keyword:
             articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()]
-
-        # Filter articles by date
-        articles = [
-            a for a in articles
-            if 'publishedAt' in a and start_date <= parse_date(a['publishedAt']).date() <= end_date
-        ]
 
         # Run sentiment analysis
         sentiments = score_articles(articles)
@@ -124,6 +110,7 @@ if st.button("Generate Report"):
                     st.dataframe(pd.DataFrame(enriched_data))
             else:
                 st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.")
+
 
 
 
