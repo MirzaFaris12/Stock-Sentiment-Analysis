@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 
-from fetch_news_finviz import fetch_news_finviz
+from fetch_news_finviz import fetch_news_finviz, filter_articles_by_date
 from analyze_sentiment import score_articles
 from fetch_price import fetch_price
 
@@ -19,6 +19,7 @@ with st.expander("🔍 Analysis Settings"):
 # ----- Main Analysis Trigger -----
 if st.button("Generate Report"):
     articles = fetch_news_finviz(ticker)
+    articles = filter_articles_by_date(articles, start_date, end_date)
     if not articles:
         st.warning("⚠️ No articles found for this ticker.")
     else:
