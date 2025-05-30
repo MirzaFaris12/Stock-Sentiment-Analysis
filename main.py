@@ -6,7 +6,7 @@ import datetime
 from dateutil.parser import parse as parse_date
 from datetime import timedelta
 
-from fetch_news import fetch_news
+from fetch_news_finviz import fetch_news_finviz as fetch_news
 from analyze_sentiment import score_articles
 from fetch_price import fetch_price
 
