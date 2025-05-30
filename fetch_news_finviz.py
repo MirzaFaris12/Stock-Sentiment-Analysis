@@ -69,4 +69,17 @@ def fetch_news_finviz(ticker):
     return articles
 
 
+def filter_articles_by_date(articles, start_date, end_date):
+    """
+    Filter the articles list to only include those within the specified date range.
+    Both start_date and end_date should be datetime.date objects.
+    """
+    filtered = []
+    for article in articles:
+        if article["publishedAt"]:
+            pub_date = datetime.fromisoformat(article["publishedAt"]).date()
+            if start_date <= pub_date <= end_date:
+                filtered.append(article)
+    return filtered
+
 
