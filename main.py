@@ -6,7 +6,7 @@ import datetime
 from dateutil.parser import parse as parse_date
 from datetime import timedelta
 
-from fetch_news_finviz import fetch_news_finviz as fetch_news
+from fetch_news_finviz import fetch_news_finviz
 from analyze_sentiment import score_articles
 from fetch_price import fetch_price
 
@@ -26,7 +26,7 @@ with st.expander("🔍 Analysis Settings"):
 
 # ----- Main Analysis Trigger -----
 if st.button("Generate Report"):
-    articles = fetch_news(ticker)
+    articles = fetch_news_finviz(ticker)
     if not articles:
         st.warning("⚠️ No articles found for this ticker.")
     else:
