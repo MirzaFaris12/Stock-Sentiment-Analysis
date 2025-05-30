@@ -2,37 +2,36 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-import datetime
 
 from fetch_news_finviz import fetch_news_finviz
 from analyze_sentiment import score_articles
 from fetch_price import fetch_price
 
-# Page Config
+# ----- Streamlit Page Config -----
 st.set_page_config(page_title="Stock Market News & Sentiment Report", layout="wide")
 st.title("📈 Stock Market News & Sentiment Analysis")
 
-# Input UI
+# ----- Input UI -----
 with st.expander("🔍 Analysis Settings"):
     ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
     keyword = st.text_input("Optional: Filter headlines containing this keyword (e.g., 'AI')", "")
 
-# Generate Report
+# ----- Main Analysis Trigger -----
 if st.button("Generate Report"):
     articles = fetch_news_finviz(ticker)
     if not articles:
         st.warning("⚠️ No articles found for this ticker.")
     else:
-        # Filter by keyword if needed
+        # Filter articles by keyword
         if keyword:
             articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()]
 
-        # Sentiment analysis
+        # Run sentiment analysis
         sentiments = score_articles(articles)
         if not sentiments:
             st.warning("⚠️ Sentiment analysis failed or returned no results.")
         else:
-            # News highlights
+            # ----- News Highlights -----
             st.subheader(f"🗞️ Sentiment Report for {ticker.upper()}")
             st.markdown("---")
 
@@ -44,7 +43,7 @@ if st.button("Generate Report"):
                 confidence_text = f", Confidence: {item['confidence']:.2f}" if 'confidence' in item else ""
                 st.markdown(f"- {item['title']} ({sentiment_label}{confidence_text})")
 
-            # Summary
+            # ----- Sentiment Summary -----
             st.markdown("---")
             st.subheader("📊 Summary Statistics")
             total = len(sentiments)
@@ -62,7 +61,7 @@ if st.button("Generate Report"):
             fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
             st.plotly_chart(fig, use_container_width=True)
 
-            # Stock price chart
+            # ----- Stock Price Chart -----
             st.markdown("---")
             st.subheader("📈 Stock Price Chart")
             df_price = fetch_price(ticker.upper())
@@ -73,39 +72,34 @@ if st.button("Generate Report"):
                 with st.expander("View Raw Price Data"):
                     st.dataframe(df_price)
 
-                # Calculate price change after news
-                df_price["Date"] = pd.to_datetime(df_price["Date"])
+                # ----- Price Change After News (Order-Based) -----
+                df_price_sorted = df_price.sort_values("Date", ascending=False).reset_index(drop=True)
                 enriched = []
-                for article in sentiments:
-                    if "publishedAt" not in article:
-                        continue
-                    try:
-                        pub_date = pd.to_datetime(article["publishedAt"]).date()
-                    except Exception:
-                        continue
+                num_articles = min(len(sentiments), len(df_price_sorted) - 1)  # -1 for next day price
 
-                    price_today_row = df_price[df_price["Date"].dt.date <= pub_date].tail(1)
-                    price_next_row = df_price[df_price["Date"].dt.date > pub_date].head(1)
-
-                    if not price_today_row.empty and not price_next_row.empty:
-                        price_today = price_today_row["Close"].values[0]
-                        price_next = price_next_row["Close"].values[0]
-                        change = (price_next - price_today) / price_today * 100
-                        enriched.append({
-                            "Title": article["title"],
-                            "Sentiment": article["sentiment"],
-                            "Published Date": pub_date,
-                            "Price at Publish": price_today,
-                            "Price Next Day": price_next,
-                            "Change (%)": round(change, 2)
-                        })
+                for i in range(num_articles):
+                    article = sentiments[i]
+                    price_today = df_price_sorted.loc[i, "Close"]
+                    price_next = df_price_sorted.loc[i + 1, "Close"]
+                    change = (price_next - price_today) / price_today * 100
+                    enriched.append({
+                        "Title": article["title"],
+                        "Sentiment": article["sentiment"],
+                        "Price at Publish": price_today,
+                        "Price Next Day": price_next,
+                        "Change (%)": round(change, 2)
+                    })
 
                 if enriched:
                     st.markdown("---")
-                    st.subheader("💹 Price Change After News")
-                    st.dataframe(pd.DataFrame(enriched))
+                    st.subheader("💹 Price Change Table After News (Order-Based, No Date Usage)")
+                    df_enriched = pd.DataFrame(enriched)
+                    st.dataframe(df_enriched, use_container_width=True)
+                else:
+                    st.warning("⚠️ Not enough price data to show price changes.")
             else:
                 st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.")
+
 
 
 
