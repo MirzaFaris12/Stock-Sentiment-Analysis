@@ -15,6 +15,7 @@ st.title("📈 Stock Market News & Sentiment Analysis")
 with st.expander("🔍 Analysis Settings"):
     ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA)", value="AAPL")
     keyword = st.text_input("Optional: Filter headlines containing this keyword (e.g., 'AI')", "")
+    top_n = st.slider("Top N impactful articles to show:", 1, 20, 10)
 
 # ----- Main Analysis Trigger -----
 if st.button("Generate Report"):
@@ -22,43 +23,33 @@ if st.button("Generate Report"):
     if not articles:
         st.warning("⚠️ No articles found for this ticker.")
     else:
-        # Filter articles by keyword
         if keyword:
             articles = [a for a in articles if keyword.lower() in a.get("title", "").lower()]
 
-        # Run sentiment analysis
         sentiments = score_articles(articles)
         if not sentiments:
             st.warning("⚠️ Sentiment analysis failed or returned no results.")
         else:
-            # Filter out articles with zero sentiment score
-            sentiments = [item for item in sentiments if item.get("sentiment", 0) != 0]
+            # Filter and sort impactful articles
+            sentiments = [item for item in sentiments if item["sentiment"] != 0 and "confidence" in item]
             if not sentiments:
-                st.warning("⚠️ All articles had neutral (0) sentiment.")
+                st.warning("⚠️ All articles had neutral (0) sentiment or missing confidence scores.")
             else:
-                # Sort articles by importance: abs(sentiment) * confidence (if exists)
-                for item in sentiments:
-                    item["importance"] = abs(item.get("sentiment", 0)) * item.get("confidence", 1)
-                sentiments = sorted(sentiments, key=lambda x: x["importance"], reverse=True)
+                # Sort by sentiment strength * confidence
+                sentiments.sort(key=lambda x: abs(x["sentiment"] * x["confidence"]), reverse=True)
+                sentiments = sentiments[:top_n]
 
                 # ----- News Highlights -----
                 st.subheader(f"🗞️ Sentiment Report for {ticker.upper()}")
                 st.markdown("---")
 
-                st.subheader("📰 Top 5 Most Impactful News")
-                for item in sentiments[:5]:
+                st.subheader("📰 News Highlights")
+                for item in sentiments:
                     sentiment_label = ("🔴 Negative" if item['sentiment'] < -0.05 else
                                        "🟢 Positive" if item['sentiment'] > 0.05 else
                                        "🟡 Neutral")
                     confidence_text = f", Confidence: {item['confidence']:.2f}" if 'confidence' in item else ""
                     st.markdown(f"- {item['title']} ({sentiment_label}{confidence_text})")
-
-                # ----- Full Sorted News Table -----
-                st.markdown("---")
-                st.subheader("📋 Sorted News by Impact")
-                sorted_df = pd.DataFrame(sentiments)[["title", "sentiment", "confidence", "importance"]]
-                sorted_df.columns = ["Title", "Sentiment", "Confidence", "Importance"]
-                st.dataframe(sorted_df, use_container_width=True)
 
                 # ----- Sentiment Summary -----
                 st.markdown("---")
@@ -102,6 +93,7 @@ if st.button("Generate Report"):
                         enriched.append({
                             "Title": article["title"],
                             "Sentiment": article["sentiment"],
+                            "Confidence": article["confidence"],
                             "Price at Publish": price_today,
                             "Price Next Day": price_next,
                             "Change (%)": round(change, 2)
@@ -109,9 +101,19 @@ if st.button("Generate Report"):
 
                     if enriched:
                         st.markdown("---")
-                        st.subheader("💹 Price Change Table After News")
+                        st.subheader("💹 Price Change Table After News (Sorted by Impact Score)")
                         df_enriched = pd.DataFrame(enriched)
-                        st.dataframe(df_enriched, use_container_width=True)
+                        df_enriched = df_enriched.sort_values(by="Sentiment", key=abs, ascending=False)
+
+                        def highlight_sentiment(row):
+                            color = ""  # default
+                            if row['Sentiment'] > 0.05:
+                                color = "background-color: #d1f7d1;"
+                            elif row['Sentiment'] < -0.05:
+                                color = "background-color: #f7d1d1;"
+                            return [color] * len(row)
+
+                        st.dataframe(df_enriched.style.apply(highlight_sentiment, axis=1), use_container_width=True)
                     else:
                         st.warning("⚠️ Not enough price data to show price changes.")
                 else:
