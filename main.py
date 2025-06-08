@@ -32,21 +32,33 @@ if st.button("Generate Report"):
             st.warning("⚠️ Sentiment analysis failed or returned no results.")
         else:
             # Filter out articles with zero sentiment score
-            sentiments = [item for item in sentiments if item["sentiment"] != 0]
+            sentiments = [item for item in sentiments if item.get("sentiment", 0) != 0]
             if not sentiments:
                 st.warning("⚠️ All articles had neutral (0) sentiment.")
             else:
+                # Sort articles by importance: abs(sentiment) * confidence (if exists)
+                for item in sentiments:
+                    item["importance"] = abs(item.get("sentiment", 0)) * item.get("confidence", 1)
+                sentiments = sorted(sentiments, key=lambda x: x["importance"], reverse=True)
+
                 # ----- News Highlights -----
                 st.subheader(f"🗞️ Sentiment Report for {ticker.upper()}")
                 st.markdown("---")
 
-                st.subheader("📰 News Highlights")
-                for item in sentiments:
+                st.subheader("📰 Top 5 Most Impactful News")
+                for item in sentiments[:5]:
                     sentiment_label = ("🔴 Negative" if item['sentiment'] < -0.05 else
                                        "🟢 Positive" if item['sentiment'] > 0.05 else
                                        "🟡 Neutral")
                     confidence_text = f", Confidence: {item['confidence']:.2f}" if 'confidence' in item else ""
                     st.markdown(f"- {item['title']} ({sentiment_label}{confidence_text})")
+
+                # ----- Full Sorted News Table -----
+                st.markdown("---")
+                st.subheader("📋 Sorted News by Impact")
+                sorted_df = pd.DataFrame(sentiments)[["title", "sentiment", "confidence", "importance"]]
+                sorted_df.columns = ["Title", "Sentiment", "Confidence", "Importance"]
+                st.dataframe(sorted_df, use_container_width=True)
 
                 # ----- Sentiment Summary -----
                 st.markdown("---")
@@ -97,13 +109,14 @@ if st.button("Generate Report"):
 
                     if enriched:
                         st.markdown("---")
-                        st.subheader("💹 Price Change Table After News (Order-Based, No Date Usage, Filtered)")
+                        st.subheader("💹 Price Change Table After News")
                         df_enriched = pd.DataFrame(enriched)
                         st.dataframe(df_enriched, use_container_width=True)
                     else:
                         st.warning("⚠️ Not enough price data to show price changes.")
                 else:
                     st.warning("⚠️ Could not retrieve price data. Check the ticker symbol or try again later.")
+
 
 
 
