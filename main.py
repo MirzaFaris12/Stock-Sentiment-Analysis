@@ -49,7 +49,8 @@ if st.button("Generate Report"):
                                        "🟢 Positive" if item['sentiment'] > 0.05 else
                                        "🟡 Neutral")
                     confidence_text = f", Confidence: {item['confidence']:.2f}" if 'confidence' in item else ""
-                    st.markdown(f"- {item['title']} ({sentiment_label}{confidence_text})")
+                    date_str = item.get("publishedAt", "N/A")
+                    st.markdown(f"- **[{date_str}]** {item['title']} ({sentiment_label}{confidence_text})")
 
                 # ----- Sentiment Summary -----
                 st.markdown("---")
@@ -92,6 +93,7 @@ if st.button("Generate Report"):
                         change = (price_next - price_today) / price_today * 100
                         enriched.append({
                             "Title": article["title"],
+                            "Date": article.get("publishedAt", "N/A"),
                             "Sentiment": article["sentiment"],
                             "Confidence": article["confidence"],
                             "Price at Publish": price_today,
