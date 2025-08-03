@@ -1,12 +1,10 @@
 streamlit
-requests
-vaderSentiment
-python-dotenv
-plotly
-pandas
-yfinance
 transformers
 torch
-python-dateutil
+plotly
+pandas
+bs4
+requests
+
 
 
