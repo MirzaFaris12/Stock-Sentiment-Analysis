@@ -1,10 +1,14 @@
+# Import Hugging Face pipeline function for NLP tasks
 from transformers import pipeline
 
 # Load FinBERT sentiment analysis model
 sentiment_model = pipeline("sentiment-analysis", model="ProsusAI/finbert")
 
+# Function to analyze a list of articles and assign sentiment scores
 def score_articles(articles):
     results = []
+
+    # Loop through each article to extract and score the title
     for article in articles:
         title = article.get("title", "")
         if not title:
@@ -30,5 +34,7 @@ def score_articles(articles):
             "publishedAt": article.get("publishedAt")  # ✅ Preserve the timestamp
         })
 
+    # Return the full sentiment result list
     return results
+
 
