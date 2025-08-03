@@ -4,18 +4,18 @@ This is a Streamlit web app that performs sentiment analysis on recent stock-rel
 
 ---
 
-## 🔧 Features
+## Features
 
-- 🔍 Fetches news articles from **Finviz**
-- 🤖 Uses **FinBERT** for sentiment classification (Positive / Neutral / Negative)
-- 📊 Visualizes sentiment breakdown via interactive pie chart
-- 📰 Highlights most impactful articles
-- 💹 Fetches historical stock price (from **Twelve Data API**)
-- 📈 Estimates price change following key news events
+- Fetches news articles from **Finviz**
+- Uses **FinBERT** for sentiment classification (Positive / Neutral / Negative)
+- Visualizes sentiment breakdown via interactive pie chart
+- Highlights most impactful articles
+- Fetches historical stock price (from **Twelve Data API**)
+- Estimates price change following key news events
 
 ---
 
-## 🚀 How to Run the App
+## How to Run the App
 
 ### 1. Clone the repository
 ```bash
@@ -63,7 +63,7 @@ streamlit run main.py
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 - `streamlit`
 - `transformers` (Hugging Face for FinBERT)
@@ -80,7 +80,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🧠 How It Works
+## How It Works
 
 1. User enters a stock ticker (e.g., TSLA)
 2. News headlines are scraped from Finviz
@@ -90,7 +90,7 @@ pip install -r requirements.txt
 
 ---
 
-## 📸 Example Output
+## Example Output
 
 - ✅ Pie chart of sentiment distribution
 - ✅ Ranked list of key headlines and confidence scores
@@ -99,14 +99,14 @@ pip install -r requirements.txt
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 Developed by **Mirza Faris**  
 Prompt engineering guidance by **OpenAI ChatGPT**
 
 ---
 
-## 📬 Support
+## Support
 
 If you encounter issues:
 - Make sure your API key is valid
